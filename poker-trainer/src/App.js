@@ -1,7 +1,8 @@
-import "./App.css";
+import "./css/App.css";
 import Button from "react-bootstrap/Button";
 import { useState } from "react";
 import Dealer from "./dealer";
+import calculateOuts from "./util";
 
 function App() {
   const [hand, updateHand] = useState([]);
@@ -18,12 +19,11 @@ function App() {
       if (nextCard === "No more cards in the deck") {
         setIsDeckEmpty(true);
         break;
+      } else {
+        newHand.push(nextCard);
+        updateHand(newHand);
       }
-
-      newHand.push(nextCard);
     }
-
-    updateHand(newHand);
   }
 
   function dealTable() {
@@ -33,7 +33,7 @@ function App() {
 
     switch (currentPhase) {
       case "pre-flop":
-        numberOfCards = 2;
+        numberOfCards = 3;
         nextPhase = "flop";
         break;
       case "flop":
@@ -65,6 +65,7 @@ function App() {
 
     updateTableCards(newTable);
     setCurrentPhase(nextPhase);
+    calculateOuts(hand, newTable);
   }
 
   function resetDeck() {
@@ -78,24 +79,28 @@ function App() {
   const renderCards = (cards) => {
     return cards.map((card) => (
       <span
-        key={card}
+        key={`${card.value}${card.suit}`}
         style={{
           margin: "0 5px",
-          color: card.includes("♥") || card.includes("♦") ? "red" : "black",
+          color: ["♥", "♦"].includes(card.suit) ? "red" : "black",
         }}
       >
-        {card}
+        {`${card.value}${card.suit}`}
       </span>
     ));
   };
 
   return (
     <div className="App">
-      <header className="App-header">
+      <div className="App-header">
         <h1>Poker Trainer</h1>
         <p>Let's learn poker!</p>
         <div style={{ display: "flex", gap: "1rem" }}>
-          <Button variant="primary" onClick={() => dealHand()}>
+          <Button
+            variant="primary"
+            disabled={isDeckEmpty}
+            onClick={() => dealHand()}
+          >
             Deal Hand
           </Button>
           <Button
@@ -124,7 +129,7 @@ function App() {
             {renderCards(hand)}
           </p>
         </div>
-      </header>
+      </div>
     </div>
   );
 }
