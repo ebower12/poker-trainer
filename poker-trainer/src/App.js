@@ -7,9 +7,21 @@ import calculateOuts from "./util";
 function App() {
   const [hand, updateHand] = useState([]);
   const [tableCards, updateTableCards] = useState([]);
+  const [availableHands, updateAvailableHands] = useState({});
+  const [outs, updateOuts] = useState(0);
   const [isDeckEmpty, setIsDeckEmpty] = useState(false);
   const [currentPhase, setCurrentPhase] = useState("pre-flop");
   const [dealer] = useState(new Dealer());
+
+  function resetDeck() {
+    dealer.reset();
+    setIsDeckEmpty(false);
+    setCurrentPhase("pre-flop");
+    updateHand([]);
+    updateTableCards([]);
+    updateAvailableHands({});
+    updateOuts(0);
+  }
 
   function dealHand() {
     const newHand = [];
@@ -65,15 +77,10 @@ function App() {
 
     updateTableCards(newTable);
     setCurrentPhase(nextPhase);
-    calculateOuts(hand, newTable);
-  }
 
-  function resetDeck() {
-    dealer.reset();
-    setIsDeckEmpty(false);
-    setCurrentPhase("pre-flop");
-    updateHand([]);
-    updateTableCards([]);
+    const { availableHands, outs } = calculateOuts(hand, newTable);
+    updateAvailableHands(availableHands);
+    updateOuts(outs);
   }
 
   const renderCards = (cards) => {
@@ -90,11 +97,17 @@ function App() {
     ));
   };
 
+  const renderAvailableHands = (availableHands) => {
+    console.log(availableHands);
+    for (const hand in availableHands) {
+      return <li>{JSON.stringify(availableHands[hand])}</li>;
+    }
+  };
+
   return (
     <div className="App">
       <div className="App-header">
         <h1>Poker Trainer</h1>
-        <p>Let's learn poker!</p>
         <div style={{ display: "flex", gap: "1rem" }}>
           <Button
             variant="primary"
@@ -109,9 +122,6 @@ function App() {
             onClick={() => dealTable()}
           >
             Deal Table
-          </Button>
-          <Button variant="secondary" onClick={() => dealer.shuffle()}>
-            Shuffle
           </Button>
           <Button variant="danger" onClick={() => resetDeck()}>
             Reset
@@ -128,6 +138,17 @@ function App() {
             Hand:
             {renderCards(hand)}
           </p>
+          <div>
+            AvailableHands:
+            <ul>
+              {Object.keys(availableHands).map((hand) => {
+                if (availableHands[hand].length > 0) {
+                  return <li key={hand}>{hand}</li>;
+                }
+              })}
+            </ul>
+          </div>
+          <p>{`Outs: ${outs}`}</p>
         </div>
       </div>
     </div>
