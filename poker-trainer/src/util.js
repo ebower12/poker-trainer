@@ -30,24 +30,67 @@ const getCardsInARow = (cards) => {
   return cardsInARow;
 };
 
+const isOneAwayFromSeries = (cards) => {
+  let gapCount = 0;
+
+  for (let i = 0; i < cards.length - 1; i++) {
+    const gap = cards[i + 1].id - cards[i].id;
+
+    if (gap > 1) {
+      gapCount += gap - 1;
+    }
+
+    if (gapCount > 1) {
+      return false;
+    }
+  }
+
+  return gapCount === 1;
+};
+
 const getDraws = (cards, suitedCards, cardsInARow) => {
-  const flushDrawCards = suitedCards.length === 4 ? suitedCards : [];
-  const straightDrawCards = cardsInARow === 4 ? cardsInARow : [];
-  const noPairDrawCards = cards.filter(
-    (card) => ![...flushDrawCards, ...straightDrawCards].includes(card)
+  const flushDraw = [];
+  const insideStraightDraw = [];
+  const openEndedStraightFlushDraw = [];
+  const insideStraightFlushDraw = isOneAwayFromSeries(cards) ? cards : [];
+  const openEndedStraightDraw = cardsInARow === 4 ? cardsInARow : [];
+  const noPair = cards.filter(
+    (card) => ![...flushDraw, ...openEndedStraightDraw].includes(card)
   );
 
-  const result = {
-    noPair: noPairDrawCards,
-    flushDraw: flushDrawCards,
-    insideStraightDraw: [],
-    openEndedStraightDraw: [],
-    insideStraightFlushDraw: [],
-    openEndedStraightFlushDraw: [],
-  };
+  for (const suit of suits) {
+    if (suitedCards[suit].length === 4) {
+      flushDraw = suitedCards;
 
-  if (straightDrawCards.length > 0) {
+      if (suitedCards[suit] === cardsInARow) {
+        openEndedStraightFlushDraw = suitedCards;
+      }
+    }
+
+    if (isOneAwayFromSeries(suitedCards)) {
+      insideStraightFlushDraw = suitedCards;
+    }
   }
+
+  return {
+    noPair,
+    flushDraw,
+    insideStraightDraw,
+    openEndedStraightDraw,
+    insideStraightFlushDraw,
+    openEndedStraightFlushDraw,
+  };
+};
+
+const getSuitedCards = (cards) => {
+  const result = {};
+
+  for (const suit of suits) {
+    const suitedCards = cards.filter((card) => card.suit === suit);
+    result[suit] = suitedCards;
+  }
+
+  return result;
 };
 
 const getDuplicates = (cards, numberOfDupes) => {
@@ -72,22 +115,16 @@ const getDuplicates = (cards, numberOfDupes) => {
   return groups;
 };
 
-const getFlush = (cards) => {
+const getFlush = (suitedCards) => {
   let flushCards = [];
 
   for (const suit of suits) {
-    const suitedCards = cards.filter((card) => card.suit === suit);
-    if (suitedCards.length >= 5) {
-      flushCards = suitedCards;
+    if (suitedCards[suit].length >= 5) {
+      flushCards = suitedCards[suit];
     }
   }
 
   return flushCards;
-};
-
-const getStraight = (cards) => {
-  const cardsInARow = getCardsInARow(cards);
-  return cardsInARow.length >= 5 ? cardsInARow : [];
 };
 
 const getStraightFlush = (straight) => {
@@ -98,6 +135,8 @@ const getStraightFlush = (straight) => {
 
 function determineHand(hand, table) {
   const cards = sortBy([...hand, ...table], ["id"]);
+  const suitedCards = getSuitedCards(cards);
+  const cardsInARow = getCardsInARow(cards);
 
   const highCard = [cards[cards.length - 1]];
   const pair = getDuplicates(cards, 2);
@@ -108,11 +147,10 @@ function determineHand(hand, table) {
     pair.length > 0 && threeOfAKind.length > 0
       ? [...pair, ...threeOfAKind]
       : [];
-  const flush = getFlush(cards);
-  const straight = getStraight(cards);
-  const straightFlush =
-    flush.length > 0 && straight.length > 0 ? getStraightFlush(straight) : [];
-  const draw = getDraws(cards, flush, straight);
+  const flush = getFlush(suitedCards);
+  const straight = cardsInARow.length >= 5 ? cardsInARow : [];
+  const straightFlush = straight.length > 0 ? getStraightFlush(straight) : [];
+  const draw = getDraws(cards, suitedCards, cardsInARow);
 
   const hands = {
     draw,
