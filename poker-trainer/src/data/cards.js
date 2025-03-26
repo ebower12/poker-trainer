@@ -19,10 +19,14 @@ const cards = () => {
   const deck = [];
 
   for (const suit of suits) {
-    let id = 1; // only unique within a suit
+    let id = 2; // only unique within a suit
 
     for (const value of values) {
-      deck.push({ id, value, suit });
+      const card = { id, value, suit };
+      if (value === "A") {
+        card.altId = 1; // Assign alternate ID for Ace
+      }
+      deck.push(card);
       id++;
     }
   }

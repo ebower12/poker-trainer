@@ -77,6 +77,7 @@ function App() {
 
     updateTableCards(newTable);
     setCurrentPhase(nextPhase);
+    console.log({ hand, newTable });
 
     const { availableHands, outs } = calculateOuts(hand, newTable);
     updateAvailableHands(availableHands);
