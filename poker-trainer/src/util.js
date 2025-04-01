@@ -11,7 +11,10 @@ const getCardsInARow = (cards) => {
     const currentCard = cards[i];
     const nextCard = cards[i + 1];
 
-    if (nextCard.id === currentCard.id + 1) {
+    if (
+      nextCard.id === currentCard.id + 1 ||
+      nextCard.id === currentCard.altId + 1
+    ) {
       currentSeries.push(currentCard);
     } else {
       currentSeries.push(currentCard);
@@ -177,19 +180,40 @@ function determineHand(hand, table) {
   return hands;
 }
 
-function mapHandsToOuts(hands) {}
-
-function calculateOuts(hand, table) {
-  let outsCount = 0;
-  const availableHands = determineHand(hand, table);
+function mapHandsToOuts(hands) {
+  const mappedOuts = {};
 
   outs.forEach((out) => {
-    if (availableHands[out.hand].length > 0) {
-      outsCount += out.outs;
+    if (hands[out.hand] && hands[out.hand].length > 0) {
+      mappedOuts[out.hand] = out.outs;
     }
   });
 
-  return { availableHands, outs: outsCount };
+  if (hands.draw && hands.draw.length > 0) {
+    const drawHand = hands.draw[0];
+
+    Object.keys(drawHand).forEach((drawType) => {
+      if (drawHand[drawType].length > 0) {
+        mappedOuts[drawType] =
+          outs.find((out) => out.hand === drawType)?.outs || 0;
+      }
+    });
+  }
+
+  const totalOuts = Object.values(mappedOuts).reduce(
+    (acc, curr) => acc + curr,
+    0
+  );
+
+  return { mappedOuts, totalOuts };
+}
+
+function calculateOuts(hand, table) {
+  const availableHands = determineHand(hand, table);
+  const mappedOuts = mapHandsToOuts(availableHands);
+  console.log(mappedOuts);
+
+  return { availableHands, outs: mappedOuts.totalOuts };
 }
 
 export default calculateOuts;
